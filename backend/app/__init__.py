@@ -1,0 +1,1 @@
+"""My Wardrobe backend application."""

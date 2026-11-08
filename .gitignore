@@ -1,0 +1,27 @@
+# Personal wardrobe data and downloaded originals
+data/wardrobe.db
+data/wardrobe.db-*
+data/images/
+data/exports/
+data/imports/
+data/catalog.csv
+data/visual_descriptions.csv
+data/image_manifest.json
+wardrobe_catalog_W001-W139_v*.csv
+wardrobe_visual_descriptions_W001-W139_v*.csv
+wardrobe_photo_catalog.html
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.tsbuildinfo
+.pytest_cache/
+.ruff_cache/
+node_modules/
+dist/
+.test-deps/
+.test-deps-*/
+.local/
