@@ -15,7 +15,7 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, { ...init, headers })
   if (!response.ok) {
     const body = await response.json().catch(() => null)
-    const message = typeof body?.detail === 'string' ? body.detail : `Ошибка API (${response.status})`
+    const message = typeof body?.detail === 'string' ? body.detail : `API error (${response.status})`
     throw new Error(message)
   }
   if (response.status === 204) return undefined as T

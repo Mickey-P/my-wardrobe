@@ -1,18 +1,18 @@
 # My Wardrobe
 
-Локальное приложение для личного каталога одежды. Проект разделяет код и данные: фотографии, таблицы с вещами, manifest и SQLite остаются локальными и не должны попадать в публичный Git-репозиторий.
+A local-first personal wardrobe catalog. The project keeps application code separate from personal data: clothing tables, photos, the image manifest, and the SQLite database stay local and must not be committed to the public Git repository.
 
-## Текущее состояние
+## Project status
 
-- Этап 1: загрузчик оригинальных фото, manifest, 139 локальных изображений.
-- Этапы 2–4: SQLite, импорт таблиц, REST API, интерфейс каталога, ручной конструктор образов, фото-менеджер, ZIP/CSV/JSON export и ZIP import.
-- Публикация frontend/API и перенос фото/БД в облако пока не выполнены.
+- Stage 1: original-photo downloader, image manifest, and 139 local images.
+- Stages 2–4: SQLite storage, catalog imports, REST API, visual catalog interface, manual outfit builder, photo manager, ZIP/CSV/JSON exports, and ZIP import.
+- Public frontend/API hosting and moving photos/database to the cloud are not configured yet.
 
-## Локальный запуск backend
+## Run the backend locally
 
-Требуется Python 3.12 или новее, Node.js и pnpm.
+Requirements: Python 3.12 or newer, Node.js, and pnpm.
 
-Первичная установка:
+Initial setup:
 
 ```powershell
 py -m venv .venv
@@ -22,33 +22,33 @@ pnpm install
 cd ..
 ```
 
-Запуск и остановка:
+Start and stop the app:
 
 ```powershell
 .\start.ps1
 .\stop.ps1
 ```
 
-Откройте `http://127.0.0.1:8000/docs` для REST/OpenAPI документации. База данных создаётся в `data/wardrobe.db`.
+Open `http://127.0.0.1:8000/docs` for the REST/OpenAPI documentation. The database is created at `data/wardrobe.db`.
 
-Каталог читается из `data/catalog.csv`, визуальные описания — из `data/visual_descriptions.csv`. При повторном импорте записи обновляются по постоянному ID, а пользовательские заметки приложения сохраняются отдельно. Перед обновлением существующей SQLite базы создаётся резервная копия.
+The catalog is read from `data/catalog.csv`; visual descriptions are read from `data/visual_descriptions.csv`. Re-imports update records by their permanent IDs and preserve user notes separately. The app creates a database backup before updating an existing SQLite database.
 
-## Данные и приватность
+## Data and privacy
 
-В публичный GitHub-репозиторий входят только код и безопасные примеры конфигурации. Настоящие CSV, HTML-каталог, локальные фотографии, manifest, SQLite и секреты исключены через `.gitignore`. После клонирования приватные таблицы и изображения нужно получить отдельно и поместить в `data/`.
+The public GitHub repository contains application code and safe example configuration only. Personal CSV files, the source HTML catalog, local photos, the image manifest, SQLite database, and secrets are excluded by `.gitignore`. After cloning, obtain your private tables and images separately and place them in `data/`.
 
-Для локального использования API работает без токена. На хостинге задайте `WARDROBE_REQUIRE_AUTH=true` и сохраните длинный случайный `WARDROBE_API_TOKEN` в настройках секретов провайдера. Не помещайте ключ в frontend, публичный код или GitHub Actions logs.
+The API does not require a token for local use. For a hosted deployment, set `WARDROBE_REQUIRE_AUTH=true` and store a long random `WARDROBE_API_TOKEN` in your provider's secret settings. Never put the token in the frontend, public source code, or GitHub Actions logs.
 
-## Загрузчик фотографий
+## Photo downloader
 
 ```powershell
 python backend\scripts\download_images.py --limit 5
 python backend\scripts\download_images.py
 ```
 
-Повторный запуск проверяет существующие файлы и пропускает корректные. `--force` принудительно загружает заново; `--limit N` ограничивает тестовую загрузку.
+On subsequent runs, valid existing files are checked and skipped. Use `--force` to download them again or `--limit N` to limit a test run.
 
-## Тесты
+## Tests
 
 ```powershell
 $env:PYTHONPATH = "backend"

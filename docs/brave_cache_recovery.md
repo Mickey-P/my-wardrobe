@@ -1,26 +1,26 @@
-# Восстановление фотографий из кэша Brave
+# Recovering photos from the Brave cache
 
-Эта процедура предназначена только для ручного восстановления оригинальных изображений. В кэше Chromium могут отсутствовать исходные URL и имена файлов, поэтому надёжно восстановить соответствие между изображением и ID только по кэшу нельзя. Не назначайте найденные изображения предметам автоматически.
+This procedure is for manually recovering original images only. Chromium's cache may not contain the original URLs or filenames, so an image-to-ID match cannot be reliably recovered from the cache alone. Do not assign recovered images to items automatically.
 
-## 1. Найдите профиль Brave
+## 1. Find the Brave profile
 
-1. Откройте Brave и перейдите на `brave://version`.
-2. Найдите строку **Путь к профилю (Profile Path)** и запишите путь. Папка профиля обычно заканчивается на `Default` или `Profile 1`.
-3. Кэш изображений обычно находится в подпапке `Cache/Cache_Data` профиля. В новых версиях Chromium структура может отличаться; проверьте также `Code Cache` и `Service Worker/CacheStorage`, но там содержимое не обязательно является HTTP-кэшем фотографий.
+1. Open Brave and visit `brave://version`.
+2. Find **Profile Path** and note its location. The profile directory usually ends in `Default` or `Profile 1`.
+3. The image cache is usually under `Cache/Cache_Data` inside the profile. Chromium's layout can change between versions. You can also inspect `Code Cache` and `Service Worker/CacheStorage`, but those locations may not contain cached photo responses.
 
-## 2. Сделайте копию кэша
+## 2. Make a copy of the cache
 
-1. Полностью закройте Brave, включая фоновые процессы. Убедитесь в диспетчере задач, что процессы Brave завершились.
-2. Скопируйте папку кэша в отдельное рабочее место и работайте только с копией. Не перемещайте и не переименовывайте файлы в исходном профиле.
-3. Учтите, что очистка кэша, обновление браузера или продолжение работы могут удалить нужные записи.
+1. Close Brave completely, including background processes. Confirm in Task Manager that all Brave processes have exited.
+2. Copy the cache folder to a separate working directory and work only on that copy. Do not move or rename files in the original profile.
+3. Clearing the cache, updating the browser, or continuing to browse may remove useful entries.
 
-## 3. Почему у файлов непонятные имена
+## 3. Why cached files have unfamiliar names
 
-Chromium хранит кэш по внутренним ключам и индексам. Файлы могут иметь служебные имена без расширений, содержать несколько записей или метаданные рядом с телом ответа. Само имя файла обычно не указывает ни на URL, ни на ID вещи.
+Chromium stores cache entries using internal keys and indexes. Files may have internal names without extensions, contain multiple entries, or have metadata stored alongside the response body. A filename usually does not reveal the URL or wardrobe item ID.
 
-## 4. Определите и проверьте формат по содержимому
+## 4. Detect and verify formats from file contents
 
-Не переименовывайте файлы по предположению. Установите Pillow в отдельное Python-окружение и проверьте кандидатов:
+Do not guess extensions. Install Pillow in a separate Python environment and inspect candidate files:
 
 ```python
 from pathlib import Path
@@ -39,15 +39,15 @@ for path in Path("cache-copy").rglob("*"):
         pass
 ```
 
-Этот пример находит файлы, которые Pillow может открыть как изображения. Он не разбирает все варианты формата Chromium Cache и не доказывает, что найден именно оригинал из каталога.
+This example finds files Pillow can open as images. It does not parse every Chromium cache format and does not prove that a file is an original photo from the catalog.
 
-## 5. Сопоставьте вручную
+## 5. Match images manually
 
-1. Создайте контактный лист/галерею кандидатов и просмотрите каждую фотографию.
-2. Сверьте её с исходным HTML-каталогом `wardrobe_photo_catalog.html`, описанием предмета и другими подтверждёнными источниками. Не делайте вывод только по похожему цвету или категории.
-3. Выберите ID W001–W139 и попросите пользователя подтвердить соответствие.
-4. После подтверждения скопируйте оригинальные байты в `data/images/` под именем ID и расширением, соответствующим фактическому формату, например `W001.webp`. Не меняйте изображение.
-5. Обновите запись для этого ID в `data/image_manifest.json`, указав источник `manual_brave_cache`, путь, MIME type, размер и SHA-256. Запишите подтверждение/примечание, если это поддерживается вашим рабочим процессом.
-6. Если корректная фотография для ID уже существует, не заменяйте её без отдельного подтверждения пользователя. Не перезаписывайте файл неподтверждённым кандидатом.
+1. Create a contact sheet or gallery of the candidates and inspect each photo.
+2. Compare each one with `wardrobe_photo_catalog.html`, the item description, and other confirmed references. Do not rely only on a similar color or category.
+3. Select an ID from W001–W139 and ask the user to confirm the match.
+4. After confirmation, copy the original bytes to `data/images/` using the item ID and the extension matching the detected format, such as `W001.webp`. Do not modify the image.
+5. Update that ID's entry in `data/image_manifest.json` with source `manual_brave_cache`, path, MIME type, file size, and SHA-256. Record the confirmation or a note if your workflow supports it.
+6. If a valid photo already exists for the ID, do not replace it without separate user confirmation. Never overwrite a file with an unconfirmed candidate.
 
-Если соответствие не удаётся уверенно подтвердить, оставьте файл несопоставленным и ID без фотографии. Это безопаснее, чем привязать к вещи неверный снимок.
+If you cannot confidently confirm a match, leave the file unmatched and the item without a photo. That is safer than assigning the wrong image.

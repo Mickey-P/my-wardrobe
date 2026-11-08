@@ -30,16 +30,16 @@ type Filters = { category: string; subcategory: string; color: string; season: s
 
 const blankStats: Stats = { total_items: 0, by_category: {}, by_season: {}, by_status: {}, with_photos: 0, without_photos: 0 }
 const categoryLabels: Record<string, string> = {
-  top: 'Верх', bottom: 'Низ', outerwear: 'Верхняя одежда', footwear: 'Обувь', accessory: 'Аксессуары',
+  top: 'Tops', bottom: 'Bottoms', outerwear: 'Outerwear', footwear: 'Footwear', accessory: 'Accessories',
 }
 const labels: Record<string, string> = {
-  subcategory: 'Подкатегория', brand: 'Бренд', primary_color: 'Основной цвет', secondary_colors: 'Дополнительные цвета',
-  pattern: 'Узор', fit: 'Посадка', material: 'Материал', season: 'Сезон', formality: 'Формальность',
-  warmth: 'Теплота', status: 'Статус', notes: 'Заметка из каталога', filename: 'Имя исходного файла',
-  ask_clothes_id: 'Ask Clothes ID', clothes_id: 'Clothes ID', image_url: 'Исходный URL',
+  subcategory: 'Subcategory', brand: 'Brand', primary_color: 'Primary color', secondary_colors: 'Secondary colors',
+  pattern: 'Pattern', fit: 'Fit', material: 'Material', season: 'Season', formality: 'Formality',
+  warmth: 'Warmth', status: 'Status', notes: 'Catalog note', filename: 'Source filename',
+  ask_clothes_id: 'Ask Clothes ID', clothes_id: 'Clothes ID', image_url: 'Source URL',
 }
 
-function display(value?: string) { return value?.trim() || 'Не указано' }
+function display(value?: string) { return value?.trim() || 'Not specified' }
 function titleCase(value: string) { return value ? value[0].toUpperCase() + value.slice(1) : value }
 
 export default function App() {
@@ -76,7 +76,7 @@ export default function App() {
       setStats(nextStats)
       setOutfits(nextOutfits)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Не удалось загрузить данные')
+      setError(reason instanceof Error ? reason.message : 'Failed to load data')
     } finally {
       setBusy(false)
     }
@@ -106,7 +106,7 @@ export default function App() {
     }).sort((a, b) => {
       const av = sort === 'id' ? a.id : sort === 'category' ? a.catalog_fields.category : sort === 'color' ? a.catalog_fields.primary_color : a.catalog_fields.brand
       const bv = sort === 'id' ? b.id : sort === 'category' ? b.catalog_fields.category : sort === 'color' ? b.catalog_fields.primary_color : b.catalog_fields.brand
-      return String(av || '').localeCompare(String(bv || ''), 'ru', { numeric: true })
+      return String(av || '').localeCompare(String(bv || ''), 'en', { numeric: true })
     })
   }, [items, search, filters, sort])
 
@@ -129,7 +129,7 @@ export default function App() {
   }
 
   const saveOutfit = async () => {
-    if (!outfitDraft.name.trim()) { setError('Укажите название образа'); return }
+    if (!outfitDraft.name.trim()) { setError('Enter an outfit name'); return }
     setBusy(true)
     try {
       const path = editingOutfit ? `/api/v1/outfits/${editingOutfit}` : '/api/v1/outfits'
@@ -137,7 +137,7 @@ export default function App() {
       setComposer(false)
       await loadData()
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Не удалось сохранить образ')
+      setError(reason instanceof Error ? reason.message : 'Failed to save outfit')
     } finally { setBusy(false) }
   }
 
@@ -149,28 +149,28 @@ export default function App() {
       setItems((current) => current.map((item) => item.id === itemId ? updated : item))
       setSelected(updated)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Не удалось сохранить предмет')
+      setError(reason instanceof Error ? reason.message : 'Failed to save item')
       throw reason
     }
   }
 
   const deleteOutfit = async (id: number) => {
-    if (!window.confirm('Удалить этот образ?')) return
+    if (!window.confirm('Delete this outfit?')) return
     try { await api(`/api/v1/outfits/${id}`, { method: 'DELETE' }); await loadData() }
-    catch (reason) { setError(reason instanceof Error ? reason.message : 'Не удалось удалить образ') }
+    catch (reason) { setError(reason instanceof Error ? reason.message : 'Failed to delete outfit') }
   }
 
   const uploadPhoto = async (item: WardrobeItem, file?: File) => {
     if (!file) return
     const has = ['downloaded', 'already_exists', 'manual_upload'].includes(item.image_status)
-    const replace = has && window.confirm(`У ${item.id} уже есть фото. Заменить его? Предыдущее будет сохранено в резервной папке.`)
+    const replace = has && window.confirm(`${item.id} already has a photo. Replace it? The previous file will be saved in the backups folder.`)
     if (has && !replace) return
     const form = new FormData()
     form.append('file', file)
     try {
       await api(`/api/v1/items/${item.id}/photo${replace ? '?replace=true' : ''}`, { method: 'POST', body: form })
       await loadData()
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Не удалось загрузить фото') }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Failed to upload photo') }
   }
 
   const exportData = async (format: 'zip' | 'catalog.csv' | 'catalog.json') => {
@@ -182,7 +182,7 @@ export default function App() {
       const response = await fetch(`${base}/api/v1/exports/${format}`, { headers })
       if (!response.ok) {
         const body = await response.json().catch(() => null)
-        throw new Error(typeof body?.detail === 'string' ? body.detail : `Экспорт не выполнен (${response.status})`)
+        throw new Error(typeof body?.detail === 'string' ? body.detail : `Export failed (${response.status})`)
       }
       const objectUrl = URL.createObjectURL(await response.blob())
       const link = document.createElement('a')
@@ -190,12 +190,12 @@ export default function App() {
       link.download = format === 'zip' ? `wardrobe_export_${new Date().toISOString().slice(0, 10)}.zip` : format
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Не удалось экспортировать данные') }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Failed to export data') }
   }
 
   const importArchive = async (file?: File) => {
     if (!file) return
-    if (!file.name.toLowerCase().endsWith('.zip')) { setError('Выберите ZIP-экспорт гардероба'); return }
+    if (!file.name.toLowerCase().endsWith('.zip')) { setError('Select a wardrobe ZIP export'); return }
     const submit = async (overwrite: boolean) => {
       const form = new FormData()
       form.append('file', file)
@@ -209,76 +209,76 @@ export default function App() {
       if (response.status === 409) {
         const conflict = await response.json()
         const details = conflict.detail || {}
-        const ids = [...(details.item_ids || []), ...(details.outfit_ids || []).map((id: number) => `образ #${id}`)].join(', ')
-        if (!window.confirm(`В базе уже есть совпадающие ID: ${ids}. Обновить эти записи данными из архива? Заметки гардероба будут сохранены; текущие фото не будут заменены.`)) return
+        const ids = [...(details.item_ids || []), ...(details.outfit_ids || []).map((id: number) => `outfit #${id}`)].join(', ')
+        if (!window.confirm(`Matching IDs already exist in the database: ${ids}. Update these records from the archive? Wardrobe notes will be preserved; existing photos will not be replaced.`)) return
         response = await submit(true)
       }
       const result = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(typeof result?.detail === 'string' ? result.detail : `Импорт не выполнен (${response.status})`)
+      if (!response.ok) throw new Error(typeof result?.detail === 'string' ? result.detail : `Import failed (${response.status})`)
       setError('')
-      window.alert(`Импорт завершён. Добавлено вещей: ${result.catalog_added}; обновлено: ${result.catalog_updated}; фото добавлено: ${result.photos_imported}; существующие фото сохранены: ${result.photos_preserved_existing}.`)
+      window.alert(`Import complete. Items added: ${result.catalog_added}; updated: ${result.catalog_updated}; photos added: ${result.photos_imported}; existing photos preserved: ${result.photos_preserved_existing}.`)
       await loadData()
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Не удалось импортировать ZIP') }
+    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Failed to import ZIP') }
     finally { if (importInput.current) importInput.current.value = '' }
   }
 
-  const title = page === 'overview' ? 'Обзор' : page === 'items' ? 'Гардероб' : page === 'photos' ? 'Фотографии' : 'Образы'
+  const title = page === 'overview' ? 'Overview' : page === 'items' ? 'Wardrobe' : page === 'photos' ? 'Photos' : 'Outfits'
   const outfitItems = items.filter((item) => !outfitSearch || [item.id, ...Object.values(item.catalog_fields)].join(' ').toLowerCase().includes(outfitSearch.toLowerCase()))
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand-mark"><div className="brand-icon"><Shirt size={19} /></div><div><strong>MY WARDROBE</strong><small>личный каталог</small></div></div>
-        <div className="side-label">МЕНЮ</div>
+        <div className="brand-mark"><div className="brand-icon"><Shirt size={19} /></div><div><strong>MY WARDROBE</strong><small>personal catalog</small></div></div>
+        <div className="side-label">MENU</div>
         <nav className="side-nav">
-          <button className={page === 'overview' ? 'active' : ''} onClick={() => setPage('overview')}><Layers3 size={18} />Обзор</button>
-          <button className={page === 'items' ? 'active' : ''} onClick={() => setPage('items')}><Grid2X2 size={18} />Все вещи<span className="nav-count">{stats.total_items}</span></button>
-          <button className={page === 'photos' ? 'active' : ''} onClick={() => setPage('photos')}><ImageIcon size={18} />Фотографии</button>
-          <button className={page === 'outfits' ? 'active' : ''} onClick={() => setPage('outfits')}><Sparkles size={18} />Образы<span className="nav-count">{outfits.length}</span></button>
+          <button className={page === 'overview' ? 'active' : ''} onClick={() => setPage('overview')}><Layers3 size={18} />Overview</button>
+          <button className={page === 'items' ? 'active' : ''} onClick={() => setPage('items')}><Grid2X2 size={18} />All items<span className="nav-count">{stats.total_items}</span></button>
+          <button className={page === 'photos' ? 'active' : ''} onClick={() => setPage('photos')}><ImageIcon size={18} />Photos</button>
+          <button className={page === 'outfits' ? 'active' : ''} onClick={() => setPage('outfits')}><Sparkles size={18} />Outfits<span className="nav-count">{outfits.length}</span></button>
         </nav>
         <div className="sidebar-bottom">
-          <div className="privacy-card"><LockKeyhole size={16} /><span>Личные данные<br /><b>хранятся отдельно</b></span></div>
-          <button className="settings-button" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><SlidersHorizontal size={17} />Настройки доступа</button>
-          <div className="connection"><span className={`connection-dot ${error ? 'offline' : ''}`} />{error ? 'Нет соединения с API' : 'Локальное подключение'}</div>
+          <div className="privacy-card"><LockKeyhole size={16} /><span>Personal data<br /><b>stored separately</b></span></div>
+          <button className="settings-button" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><SlidersHorizontal size={17} />Access settings</button>
+          <div className="connection"><span className={`connection-dot ${error ? 'offline' : ''}`} />{error ? 'API connection unavailable' : 'Local connection'}</div>
         </div>
       </aside>
 
       <main className="main-area">
         <header className="topbar">
-          <div><div className="breadcrumbs">МОЙ ГАРДЕРОБ <span>/</span> {title.toLocaleUpperCase()}</div><h1>{title}</h1></div>
-          <div className="top-actions"><div className="top-status"><span className={`connection-dot ${error ? 'offline' : ''}`} />{error ? 'API недоступен' : 'Синхронизировано локально'}</div><div className="export-actions"><details className="export-dropdown"><summary className="subtle-button"><Download size={15} />Экспорт<ChevronDown size={14} /></summary><div className="export-options"><button onClick={() => void exportData('zip')}>Полный архив ZIP</button><button onClick={() => void exportData('catalog.csv')}>Каталог CSV</button><button onClick={() => void exportData('catalog.json')}>Каталог JSON</button></div></details><button className="subtle-button import-button" onClick={() => importInput.current?.click()}><Upload size={15} />Импорт ZIP</button><input ref={importInput} type="file" accept=".zip,application/zip" hidden onChange={(event) => void importArchive(event.target.files?.[0])} /></div><button className="icon-button" title="Настроить подключение" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><LockKeyhole size={18} /></button></div>
+          <div><div className="breadcrumbs">MY WARDROBE <span>/</span> {title.toLocaleUpperCase()}</div><h1>{title}</h1></div>
+          <div className="top-actions"><div className="top-status"><span className={`connection-dot ${error ? 'offline' : ''}`} />{error ? 'API unavailable' : 'Synced locally'}</div><div className="export-actions"><details className="export-dropdown"><summary className="subtle-button"><Download size={15} />Export<ChevronDown size={14} /></summary><div className="export-options"><button onClick={() => void exportData('zip')}>Full ZIP archive</button><button onClick={() => void exportData('catalog.csv')}>Catalog CSV</button><button onClick={() => void exportData('catalog.json')}>Catalog JSON</button></div></details><button className="subtle-button import-button" onClick={() => importInput.current?.click()}><Upload size={15} />Import ZIP</button><input ref={importInput} type="file" accept=".zip,application/zip" hidden onChange={(event) => void importArchive(event.target.files?.[0])} /></div><button className="icon-button" title="Configure connection" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><LockKeyhole size={18} /></button></div>
         </header>
 
-        {error && <div className="alert"><CircleHelp size={17} /><span>{error}. Проверь backend и ключ в настройках доступа.</span><button onClick={() => void loadData()}>Повторить</button></div>}
-        {busy && !items.length && <div className="loading-line"><LoaderCircle size={17} className="spin" />Загружаем гардероб…</div>}
+        {error && <div className="alert"><CircleHelp size={17} /><span>{error}. Check that the backend is running and verify the access token in settings.</span><button onClick={() => void loadData()}>Retry</button></div>}
+        {busy && !items.length && <div className="loading-line"><LoaderCircle size={17} className="spin" />Loading wardrobe…</div>}
 
         {page === 'overview' && <Overview stats={stats} outfits={outfits.length} openItems={() => setPage('items')} openPhotos={() => setPage('photos')} />}
 
         {page === 'items' && <section className="page-content">
-          <div className="catalog-toolbar"><label className="search-box"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Поиск по ID, описанию, бренду…" /></label><span className="result-count">{filteredItems.length} предметов</span><label className="sort-control"><ArrowDownUp size={15} /><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="id">По ID</option><option value="category">По категории</option><option value="color">По цвету</option><option value="brand">По бренду</option></select></label></div>
+          <div className="catalog-toolbar"><label className="search-box"><Search size={18} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by ID, description, or brand…" /></label><span className="result-count">{filteredItems.length} items</span><label className="sort-control"><ArrowDownUp size={15} /><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="id">By ID</option><option value="category">By category</option><option value="color">By color</option><option value="brand">By brand</option></select></label></div>
           <FilterBar items={items} filters={filters} setFilters={setFilters} />
-          {filteredItems.length ? <div className="item-grid">{filteredItems.map((item) => <ItemCard key={`${item.id}-${tokenVersion}`} item={item} onClick={() => setSelected(item)} />)}</div> : <Empty title="Ничего не найдено" text="Измените запрос или сбросьте фильтры." />}
+          {filteredItems.length ? <div className="item-grid">{filteredItems.map((item) => <ItemCard key={`${item.id}-${tokenVersion}`} item={item} onClick={() => setSelected(item)} />)}</div> : <Empty title="No items found" text="Adjust your search or clear the filters." />}
         </section>}
 
         {page === 'photos' && <section className="page-content">
-          <div className="section-intro"><div><p>Проверяйте оригиналы и добавляйте недостающие фотографии вручную.</p><span>{stats.with_photos} фото · {stats.without_photos} без фото</span></div><button className="subtle-button" onClick={() => void loadData()}><ArrowDownUp size={15} />Обновить статусы</button></div>
+          <div className="section-intro"><div><p>Review original photos and add missing ones manually.</p><span>{stats.with_photos} photos · {stats.without_photos} without photos</span></div><button className="subtle-button" onClick={() => void loadData()}><ArrowDownUp size={15} />Refresh statuses</button></div>
           <div className="photo-management-grid">{items.map((item) => <article className="photo-manage-card" key={item.id}>
             <button className="photo-manage-image" onClick={() => setSelected(item)}><ItemPhoto key={`${item.id}-${tokenVersion}`} id={item.id} /></button>
-            <div className="photo-manage-meta"><b>{item.id}</b><span className={`photo-status ${item.image_status === 'missing_url' ? 'missing' : item.image_status === 'manual_upload' ? 'manual' : 'original'}`}>{item.image_status === 'manual_upload' ? 'Загружено вручную' : ['downloaded','already_exists'].includes(item.image_status) ? 'Оригинал из каталога' : 'Нет фото'}</span></div>
-            <label className="upload-button"><Plus size={14} />{['downloaded','already_exists','manual_upload'].includes(item.image_status) ? 'Заменить фото' : 'Добавить фото'}<input type="file" accept="image/*" onChange={(event) => { void uploadPhoto(item, event.target.files?.[0]); event.currentTarget.value = '' }} /></label>
+            <div className="photo-manage-meta"><b>{item.id}</b><span className={`photo-status ${item.image_status === 'missing_url' ? 'missing' : item.image_status === 'manual_upload' ? 'manual' : 'original'}`}>{item.image_status === 'manual_upload' ? 'Uploaded manually' : ['downloaded','already_exists'].includes(item.image_status) ? 'Catalog original' : 'No photo'}</span></div>
+            <label className="upload-button"><Plus size={14} />{['downloaded','already_exists','manual_upload'].includes(item.image_status) ? 'Replace photo' : 'Add photo'}<input type="file" accept="image/*" onChange={(event) => { void uploadPhoto(item, event.target.files?.[0]); event.currentTarget.value = '' }} /></label>
           </article>)}</div>
         </section>}
 
         {page === 'outfits' && <section className="page-content">
-          <div className="section-intro"><div><p>Собирайте комплекты вручную из вещей своего каталога.</p><span>{outfits.length} сохранённых образов</span></div><button className="primary-button" onClick={() => openComposer()}><Plus size={17} />Новый образ</button></div>
-          {outfits.length ? <div className="outfit-grid">{outfits.map((outfit) => <article className="outfit-card" key={outfit.id}><div className="outfit-mosaic">{outfit.item_ids.slice(0,4).map((id) => <ItemPhoto key={`${outfit.id}-${id}-${tokenVersion}`} id={id} />)}{!outfit.item_ids.length && <div className="empty-mosaic"><Sparkles size={25} /></div>}</div><div className="outfit-body"><div className="outfit-tags">{outfit.season && <span>{outfit.season}</span>}{outfit.occasion && <span>{outfit.occasion}</span>}</div><h3>{outfit.name}</h3><p>{outfit.description || 'Без описания'}</p><div className="outfit-foot"><span>{outfit.item_ids.length} вещей · {outfit.item_ids.join(', ') || 'пустой образ'}</span><div><button className="text-button" onClick={() => openComposer(outfit)}>Изменить</button><button className="text-button danger-text" onClick={() => void deleteOutfit(outfit.id)}>Удалить</button></div></div></div></article>)}</div> : <Empty title="Пока нет сохранённых образов" text="Создайте первый комплект из своих вещей." action={<button className="primary-button" onClick={() => openComposer()}><Plus size={17} />Создать образ</button>} />}
+          <div className="section-intro"><div><p>Build outfits manually from items in your catalog.</p><span>{outfits.length} saved outfits</span></div><button className="primary-button" onClick={() => openComposer()}><Plus size={17} />New outfit</button></div>
+          {outfits.length ? <div className="outfit-grid">{outfits.map((outfit) => <article className="outfit-card" key={outfit.id}><div className="outfit-mosaic">{outfit.item_ids.slice(0,4).map((id) => <ItemPhoto key={`${outfit.id}-${id}-${tokenVersion}`} id={id} />)}{!outfit.item_ids.length && <div className="empty-mosaic"><Sparkles size={25} /></div>}</div><div className="outfit-body"><div className="outfit-tags">{outfit.season && <span>{outfit.season}</span>}{outfit.occasion && <span>{outfit.occasion}</span>}</div><h3>{outfit.name}</h3><p>{outfit.description || 'No description'}</p><div className="outfit-foot"><span>{outfit.item_ids.length} items · {outfit.item_ids.join(', ') || 'empty outfit'}</span><div><button className="text-button" onClick={() => openComposer(outfit)}>Edit</button><button className="text-button danger-text" onClick={() => void deleteOutfit(outfit.id)}>Delete</button></div></div></div></article>)}</div> : <Empty title="No saved outfits yet" text="Create your first outfit from your wardrobe." action={<button className="primary-button" onClick={() => openComposer()}><Plus size={17} />Create outfit</button>} />}
         </section>}
       </main>
 
       {selected && <ItemDetail item={items.find((item) => item.id === selected.id) || selected} close={() => setSelected(null)} tokenVersion={tokenVersion} onSave={saveItem} />}
-      {composer && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setComposer(false) }}><section className="composer-modal"><header><div><div className="eyebrow">КОНСТРУКТОР ОБРАЗА</div><h2>{editingOutfit ? 'Изменить образ' : 'Новый образ'}</h2></div><button className="icon-button" onClick={() => setComposer(false)}><X size={19} /></button></header><div className="composer-form"><label>Название<input autoFocus value={outfitDraft.name} onChange={(event) => setOutfitDraft({ ...outfitDraft, name: event.target.value })} placeholder="Например, прогулка в прохладный день" /></label><div className="form-row"><label>Сезон<input value={outfitDraft.season} onChange={(event) => setOutfitDraft({ ...outfitDraft, season: event.target.value })} placeholder="Весна" /></label><label>Повод<input value={outfitDraft.occasion} onChange={(event) => setOutfitDraft({ ...outfitDraft, occasion: event.target.value })} placeholder="Повседневный" /></label></div><label>Описание<textarea rows={2} value={outfitDraft.description} onChange={(event) => setOutfitDraft({ ...outfitDraft, description: event.target.value })} placeholder="Заметки к сочетанию" /></label><div className="item-pick-header"><b>Выбрать вещи <small>{outfitDraft.item_ids.length} выбрано</small></b><label className="mini-search"><Search size={14} /><input value={outfitSearch} onChange={(event) => setOutfitSearch(event.target.value)} placeholder="Найти вещь" /></label></div><div className="item-picker">{outfitItems.map((item) => { const checked = outfitDraft.item_ids.includes(item.id); return <button className={`pick-item ${checked ? 'chosen' : ''}`} key={item.id} onClick={() => setOutfitDraft({ ...outfitDraft, item_ids: checked ? outfitDraft.item_ids.filter((id) => id !== item.id) : [...outfitDraft.item_ids, item.id] })}><span className="pick-check">{checked && <Check size={13} />}</span><b>{item.id}</b><span>{display(item.catalog_fields.subcategory)}</span></button> })}</div></div><footer><button className="subtle-button" onClick={() => setComposer(false)}>Отмена</button><button className="primary-button" disabled={busy} onClick={() => void saveOutfit()}>{busy ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{editingOutfit ? 'Сохранить изменения' : 'Сохранить образ'}</button></footer></section></div>}
+      {composer && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setComposer(false) }}><section className="composer-modal"><header><div><div className="eyebrow">OUTFIT BUILDER</div><h2>{editingOutfit ? 'Edit outfit' : 'New outfit'}</h2></div><button className="icon-button" onClick={() => setComposer(false)}><X size={19} /></button></header><div className="composer-form"><label>Name<input autoFocus value={outfitDraft.name} onChange={(event) => setOutfitDraft({ ...outfitDraft, name: event.target.value })} placeholder="For example, a cool-weather walk" /></label><div className="form-row"><label>Season<input value={outfitDraft.season} onChange={(event) => setOutfitDraft({ ...outfitDraft, season: event.target.value })} placeholder="Spring" /></label><label>Occasion<input value={outfitDraft.occasion} onChange={(event) => setOutfitDraft({ ...outfitDraft, occasion: event.target.value })} placeholder="Casual" /></label></div><label>Description<textarea rows={2} value={outfitDraft.description} onChange={(event) => setOutfitDraft({ ...outfitDraft, description: event.target.value })} placeholder="Notes about this outfit" /></label><div className="item-pick-header"><b>Select items <small>{outfitDraft.item_ids.length} selected</small></b><label className="mini-search"><Search size={14} /><input value={outfitSearch} onChange={(event) => setOutfitSearch(event.target.value)} placeholder="Find an item" /></label></div><div className="item-picker">{outfitItems.map((item) => { const checked = outfitDraft.item_ids.includes(item.id); return <button className={`pick-item ${checked ? 'chosen' : ''}`} key={item.id} onClick={() => setOutfitDraft({ ...outfitDraft, item_ids: checked ? outfitDraft.item_ids.filter((id) => id !== item.id) : [...outfitDraft.item_ids, item.id] })}><span className="pick-check">{checked && <Check size={13} />}</span><b>{item.id}</b><span>{display(item.catalog_fields.subcategory)}</span></button> })}</div></div><footer><button className="subtle-button" onClick={() => setComposer(false)}>Cancel</button><button className="primary-button" disabled={busy} onClick={() => void saveOutfit()}>{busy ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{editingOutfit ? 'Save changes' : 'Save outfit'}</button></footer></section></div>}
 
-      {showSettings && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowSettings(false) }}><section className="settings-modal"><header><div><div className="eyebrow">ПОДКЛЮЧЕНИЕ API</div><h2>Настройки доступа</h2></div><button className="icon-button" onClick={() => setShowSettings(false)}><X size={19} /></button></header><p>Для локального backend оставьте поле пустым. Для размещённого API вставьте ключ доступа. Он хранится только в этом браузере и не входит в исходный код.</p><label>Bearer token<input type="password" autoComplete="off" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Оставьте пустым для локального режима" /></label><footer><button className="subtle-button" onClick={() => setShowSettings(false)}>Отмена</button><button className="primary-button" onClick={pickToken}><Check size={16} />Сохранить</button></footer></section></div>}
+      {showSettings && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowSettings(false) }}><section className="settings-modal"><header><div><div className="eyebrow">API CONNECTION</div><h2>Access settings</h2></div><button className="icon-button" onClick={() => setShowSettings(false)}><X size={19} /></button></header><p>Leave this field empty for a local backend. For a hosted API, enter an access token. It is stored only in this browser and is never included in the source code.</p><label>Bearer token<input type="password" autoComplete="off" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Leave empty for local mode" /></label><footer><button className="subtle-button" onClick={() => setShowSettings(false)}>Cancel</button><button className="primary-button" onClick={pickToken}><Check size={16} />Save</button></footer></section></div>}
     </div>
   )
 }
@@ -288,10 +288,10 @@ function Overview({ stats, outfits, openItems, openPhotos }: { stats: Stats; out
   const max = Math.max(1, ...categories.map(([, count]) => count))
   const seasons = Object.entries(stats.by_season).sort((a, b) => b[1] - a[1]).slice(0, 5)
   return <section className="page-content overview-content">
-    <div className="welcome-row"><div><div className="eyebrow">ВАШ ГАРДЕРОБ</div><h2>Вещи, которые уже есть</h2><p>Персональный каталог с фотографиями и деталями каждой вещи.</p></div><button className="primary-button" onClick={openItems}><Grid2X2 size={16} />Открыть каталог</button></div>
-    <div className="stats-row"><StatCard label="Всего вещей" value={stats.total_items} note="постоянные ID W001—W139" icon={<Shirt size={19} />} /><StatCard label="С фотографиями" value={stats.with_photos} note={stats.total_items ? `${Math.round(stats.with_photos / stats.total_items * 100)}% каталога` : 'Локальные оригиналы'} icon={<ImageIcon size={19} />} /><StatCard label="Без фотографий" value={stats.without_photos} note="можно добавить вручную" icon={<ImageIcon size={19} />} action={openPhotos} /><StatCard label="Сохранено образов" value={outfits} note="ручные сочетания" icon={<Heart size={19} />} /></div>
-    <div className="overview-panels"><section className="panel category-panel"><div className="panel-heading"><div><span className="eyebrow">СОСТАВ</span><h3>По категориям</h3></div><button className="text-button" onClick={openItems}>Все вещи <ChevronDown size={14} className="rotate-left" /></button></div>{categories.map(([name, count]) => <div className="bar-row" key={name}><div className="bar-label"><span>{categoryLabels[name] || titleCase(name)}</span><b>{count}</b></div><div className="bar-track"><div style={{ width: `${count / max * 100}%` }} /></div></div>)}</section><section className="panel season-panel"><div className="panel-heading"><div><span className="eyebrow">СЕЗОННОСТЬ</span><h3>В описаниях каталога</h3></div><Sparkles size={18} className="muted-icon" /></div>{seasons.map(([name, count]) => <div className="season-row" key={name}><span>{name === 'Unspecified' ? 'Не указан' : name}</span><b>{count}</b></div>)}<div className="data-note"><CircleHelp size={15} />Пустые характеристики оставлены без догадок.</div></section></div>
-    <div className="notice-strip"><div className="notice-icon"><Cloud size={18} /></div><div><b>Приватность по умолчанию</b><span>Фото и таблицы остаются отдельно от публичного кода.</span></div><button onClick={openPhotos}>Управлять фото <ChevronDown size={14} className="rotate-left" /></button></div>
+    <div className="welcome-row"><div><div className="eyebrow">YOUR WARDROBE</div><h2>What you already own</h2><p>A personal catalog with photos and details for every item.</p></div><button className="primary-button" onClick={openItems}><Grid2X2 size={16} />Open catalog</button></div>
+    <div className="stats-row"><StatCard label="Total items" value={stats.total_items} note="permanent IDs W001–W139" icon={<Shirt size={19} />} /><StatCard label="With photos" value={stats.with_photos} note={stats.total_items ? `${Math.round(stats.with_photos / stats.total_items * 100)}% of catalog` : 'Local originals'} icon={<ImageIcon size={19} />} /><StatCard label="Without photos" value={stats.without_photos} note="photos can be added manually" icon={<ImageIcon size={19} />} action={openPhotos} /><StatCard label="Saved outfits" value={outfits} note="manually created looks" icon={<Heart size={19} />} /></div>
+    <div className="overview-panels"><section className="panel category-panel"><div className="panel-heading"><div><span className="eyebrow">WARDROBE</span><h3>By category</h3></div><button className="text-button" onClick={openItems}>All items <ChevronDown size={14} className="rotate-left" /></button></div>{categories.map(([name, count]) => <div className="bar-row" key={name}><div className="bar-label"><span>{categoryLabels[name] || titleCase(name)}</span><b>{count}</b></div><div className="bar-track"><div style={{ width: `${count / max * 100}%` }} /></div></div>)}</section><section className="panel season-panel"><div className="panel-heading"><div><span className="eyebrow">SEASONS</span><h3>In catalog descriptions</h3></div><Sparkles size={18} className="muted-icon" /></div>{seasons.map(([name, count]) => <div className="season-row" key={name}><span>{name === 'Unspecified' ? 'Not specified' : name}</span><b>{count}</b></div>)}<div className="data-note"><CircleHelp size={15} />Blank attributes are left unspecified.</div></section></div>
+    <div className="notice-strip"><div className="notice-icon"><Cloud size={18} /></div><div><b>Private by default</b><span>Photos and tables stay separate from the public source code.</span></div><button onClick={openPhotos}>Manage photos <ChevronDown size={14} className="rotate-left" /></button></div>
   </section>
 }
 
@@ -303,14 +303,14 @@ function FilterBar({ items, filters, setFilters }: { items: WardrobeItem[]; filt
   const set = (key: string, value: string) => setFilters({ ...filters, [key]: value })
   const categories = [...new Set(items.map((item) => item.catalog_fields.category).filter(Boolean))].sort()
   const statuses = [...new Set(items.map((item) => item.catalog_fields.status).filter(Boolean))].sort()
-  const select = (key: keyof Filters, label: string, choices: string[]) => <label className="filter-select" key={key}><span>{label}</span><select value={filters[key]} onChange={(event) => set(key, event.target.value)}><option value="">Все</option>{choices.map((choice) => <option key={choice} value={choice}>{key === 'has_photo' ? choice === 'yes' ? 'Есть' : 'Нет' : choice}</option>)}</select></label>
+  const select = (key: keyof Filters, label: string, choices: string[]) => <label className="filter-select" key={key}><span>{label}</span><select value={filters[key]} onChange={(event) => set(key, event.target.value)}><option value="">All</option>{choices.map((choice) => <option key={choice} value={choice}>{key === 'has_photo' ? choice === 'yes' ? 'Yes' : 'No' : choice}</option>)}</select></label>
   const active = Object.values(filters).some(Boolean)
-  return <div className="filters-wrap"><div className="filters-title"><ListFilter size={16} /><span>Фильтры</span>{active && <button onClick={() => setFilters({ category: '', subcategory: '', color: '', season: '', formality: '', warmth: '', fit: '', brand: '', status: '', has_photo: '' })}>Сбросить</button>}</div><div className="filters-grid">{select('category','Категория',categories)}<label className="filter-select"><span>Подкатегория</span><input value={filters.subcategory} onChange={(event) => set('subcategory', event.target.value)} placeholder="Любая" /></label><label className="filter-select"><span>Цвет</span><input value={filters.color} onChange={(event) => set('color', event.target.value)} placeholder="Любой цвет" /></label><label className="filter-select"><span>Сезон</span><input value={filters.season} onChange={(event) => set('season', event.target.value)} placeholder="Любой" /></label><label className="filter-select"><span>Формальность</span><input value={filters.formality} onChange={(event) => set('formality', event.target.value)} placeholder="Любая" /></label><label className="filter-select"><span>Теплота</span><input value={filters.warmth} onChange={(event) => set('warmth', event.target.value)} placeholder="Любая" /></label><label className="filter-select"><span>Посадка</span><input value={filters.fit} onChange={(event) => set('fit', event.target.value)} placeholder="Любая" /></label><label className="filter-select"><span>Бренд</span><input value={filters.brand} onChange={(event) => set('brand', event.target.value)} placeholder="Любой" /></label>{select('status','Статус',statuses)}{select('has_photo','Фото',['yes','no'])}</div></div>
+  return <div className="filters-wrap"><div className="filters-title"><ListFilter size={16} /><span>Filters</span>{active && <button onClick={() => setFilters({ category: '', subcategory: '', color: '', season: '', formality: '', warmth: '', fit: '', brand: '', status: '', has_photo: '' })}>Clear</button>}</div><div className="filters-grid">{select('category','Category',categories)}<label className="filter-select"><span>Subcategory</span><input value={filters.subcategory} onChange={(event) => set('subcategory', event.target.value)} placeholder="Any" /></label><label className="filter-select"><span>Color</span><input value={filters.color} onChange={(event) => set('color', event.target.value)} placeholder="Any color" /></label><label className="filter-select"><span>Season</span><input value={filters.season} onChange={(event) => set('season', event.target.value)} placeholder="Any" /></label><label className="filter-select"><span>Formality</span><input value={filters.formality} onChange={(event) => set('formality', event.target.value)} placeholder="Any" /></label><label className="filter-select"><span>Warmth</span><input value={filters.warmth} onChange={(event) => set('warmth', event.target.value)} placeholder="Any" /></label><label className="filter-select"><span>Fit</span><input value={filters.fit} onChange={(event) => set('fit', event.target.value)} placeholder="Any" /></label><label className="filter-select"><span>Brand</span><input value={filters.brand} onChange={(event) => set('brand', event.target.value)} placeholder="Any" /></label>{select('status','Status',statuses)}{select('has_photo','Photo',['yes','no'])}</div></div>
 }
 
 function ItemCard({ item, onClick }: { item: WardrobeItem; onClick: () => void }) {
   const fields = item.catalog_fields
-  return <button className="item-card" onClick={onClick}><div className="item-card-photo"><ItemPhoto id={item.id} alt={item.id} /><span className="item-id">{item.id}</span>{item.image_status === 'manual_upload' && <span className="manual-mark">Ручное фото</span>}</div><div className="item-card-info"><div className="item-card-title"><strong>{display(fields.subcategory)}</strong><span>{display(fields.primary_color)}</span></div><div className="item-card-meta"><span>{categoryLabels[fields.category] || display(fields.category)}</span>{fields.brand && <><i /> <span>{fields.brand}</span></>}{fields.season && <><i /> <span>{fields.season}</span></>}</div></div></button>
+  return <button className="item-card" onClick={onClick}><div className="item-card-photo"><ItemPhoto id={item.id} alt={item.id} /><span className="item-id">{item.id}</span>{item.image_status === 'manual_upload' && <span className="manual-mark">Manual photo</span>}</div><div className="item-card-info"><div className="item-card-title"><strong>{display(fields.subcategory)}</strong><span>{display(fields.primary_color)}</span></div><div className="item-card-meta"><span>{categoryLabels[fields.category] || display(fields.category)}</span>{fields.brand && <><i /> <span>{fields.brand}</span></>}{fields.season && <><i /> <span>{fields.season}</span></>}</div></div></button>
 }
 
 function ItemDetail({ item, close, tokenVersion, onSave }: { item: WardrobeItem; close: () => void; tokenVersion: number; onSave: (id: string, fields: Record<string, string>, notes: string) => Promise<void> }) {
@@ -321,7 +321,7 @@ function ItemDetail({ item, close, tokenVersion, onSave }: { item: WardrobeItem;
   useEffect(() => { setDraft({ ...item.catalog_fields }); setNotes(item.user_notes); setEditing(false) }, [item.id, item.catalog_fields, item.user_notes])
   const fields = item.catalog_fields
   const details = Object.entries(fields).filter(([key, value]) => key !== 'id' && value?.trim())
-  return <div className="detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close() }}><aside className="detail-panel"><header><div><span className="eyebrow">КАРТОЧКА ПРЕДМЕТА</span><h2>{item.id}</h2></div><div className="detail-header-actions"><button className="subtle-button edit-toggle" onClick={() => setEditing(!editing)}><Pencil size={14} />{editing ? 'Отмена' : 'Редактировать'}</button><button className="icon-button" onClick={close}><X size={19} /></button></div></header><div className="detail-photo"><ItemPhoto key={`${item.id}-${tokenVersion}`} id={item.id} alt={item.id} /></div><div className="detail-content"><div className="detail-heading"><div><span className="eyebrow">{categoryLabels[fields.category] || fields.category}</span><h3>{display(fields.subcategory)}</h3></div><span className={`photo-status ${item.image_status === 'manual_upload' ? 'manual' : 'original'}`}>{item.image_status === 'manual_upload' ? 'Фото вручную' : ['downloaded','already_exists'].includes(item.image_status) ? 'Оригинальное фото' : 'Нет фото'}</span></div>{item.visual_description && <div className="visual-description"><span className="eyebrow">ВИЗУАЛЬНОЕ ОПИСАНИЕ</span><p>{item.visual_description.visual_description}</p>{item.visual_description.critical_details && <div><b>Критические детали</b><p>{item.visual_description.critical_details}</p></div>}{item.visual_description.uncertainties && <div className="uncertainties"><b>Неопределённости</b><p>{item.visual_description.uncertainties}</p></div>}</div>}<div className="detail-fields"><span className="eyebrow">ХАРАКТЕРИСТИКИ КАТАЛОГА</span>{editing ? Object.entries(draft).filter(([key]) => key !== 'id').map(([key,value]) => <label className="detail-edit-field" key={key}><span>{labels[key] || titleCase(key.replaceAll('_',' '))}</span><input value={value || ''} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>) : details.map(([key,value]) => <div className="detail-field" key={key}><span>{labels[key] || titleCase(key.replaceAll('_',' '))}</span><p>{value}</p></div>)}</div>{editing ? <div className="detail-user-notes"><label><b>Мои заметки</b><textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} /></label><button className="primary-button save-item-button" disabled={saving} onClick={async () => { setSaving(true); try { await onSave(item.id, draft, notes); setEditing(false) } catch { /* Error is shown in the app banner */ } finally { setSaving(false) } }}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}Сохранить</button></div> : item.user_notes && <div className="detail-user-notes"><b>Мои заметки</b><p>{item.user_notes}</p></div>}<div className="detail-footer"><Download size={15} /><span>Локальный файл: {item.local_image_path || 'отсутствует'}</span></div></div></aside></div>
+  return <div className="detail-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) close() }}><aside className="detail-panel"><header><div><span className="eyebrow">ITEM DETAILS</span><h2>{item.id}</h2></div><div className="detail-header-actions"><button className="subtle-button edit-toggle" onClick={() => setEditing(!editing)}><Pencil size={14} />{editing ? 'Cancel' : 'Edit'}</button><button className="icon-button" onClick={close}><X size={19} /></button></div></header><div className="detail-photo"><ItemPhoto key={`${item.id}-${tokenVersion}`} id={item.id} alt={item.id} /></div><div className="detail-content"><div className="detail-heading"><div><span className="eyebrow">{categoryLabels[fields.category] || fields.category}</span><h3>{display(fields.subcategory)}</h3></div><span className={`photo-status ${item.image_status === 'manual_upload' ? 'manual' : 'original'}`}>{item.image_status === 'manual_upload' ? 'Manual upload' : ['downloaded','already_exists'].includes(item.image_status) ? 'Original photo' : 'No photo'}</span></div>{item.visual_description && <div className="visual-description"><span className="eyebrow">VISUAL DESCRIPTION</span><p>{item.visual_description.visual_description}</p>{item.visual_description.critical_details && <div><b>Critical details</b><p>{item.visual_description.critical_details}</p></div>}{item.visual_description.uncertainties && <div className="uncertainties"><b>Uncertainties</b><p>{item.visual_description.uncertainties}</p></div>}</div>}<div className="detail-fields"><span className="eyebrow">CATALOG ATTRIBUTES</span>{editing ? Object.entries(draft).filter(([key]) => key !== 'id').map(([key,value]) => <label className="detail-edit-field" key={key}><span>{labels[key] || titleCase(key.replaceAll('_',' '))}</span><input value={value || ''} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })} /></label>) : details.map(([key,value]) => <div className="detail-field" key={key}><span>{labels[key] || titleCase(key.replaceAll('_',' '))}</span><p>{value}</p></div>)}</div>{editing ? <div className="detail-user-notes"><label><b>My notes</b><textarea rows={3} value={notes} onChange={(event) => setNotes(event.target.value)} /></label><button className="primary-button save-item-button" disabled={saving} onClick={async () => { setSaving(true); try { await onSave(item.id, draft, notes); setEditing(false) } catch { /* Error is shown in the app banner */ } finally { setSaving(false) } }}>{saving ? <LoaderCircle size={15} className="spin" /> : <Check size={15} />}Save</button></div> : item.user_notes && <div className="detail-user-notes"><b>My notes</b><p>{item.user_notes}</p></div>}<div className="detail-footer"><Download size={15} /><span>Local file: {item.local_image_path || 'missing'}</span></div></div></aside></div>
 }
 
 function Empty({ title, text, action }: { title: string; text: string; action?: React.ReactNode }) {

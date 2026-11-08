@@ -1,8 +1,8 @@
-# Данные My Wardrobe
+# My Wardrobe data
 
-- `catalog.csv` — текущий проектный каталог. Источник при первоначальном переносе: `wardrobe_catalog_W001-W139_v8.csv`.
-- `visual_descriptions.csv` — текущий визуальный справочник. Источник при первоначальном переносе: `wardrobe_visual_descriptions_W001-W139_v3.csv`.
-- `image_manifest.json` — статусы, исходные URL и контрольные суммы локальных фотографий.
-- `images/` — оригинальные фотографии по постоянным ID предметов.
+- `catalog.csv` — the current project catalog. Original source: `wardrobe_catalog_W001-W139_v8.csv`.
+- `visual_descriptions.csv` — the current visual reference. Original source: `wardrobe_visual_descriptions_W001-W139_v3.csv`.
+- `image_manifest.json` — local photo statuses, source URLs, and checksums.
+- `images/` — original photos named by each item's permanent ID.
 
-Версионные исходные CSV в корне проекта сохранены без изменений. Импортёр каталога и визуального справочника должен обновлять их данные раздельно по `id`, не заменяя пользовательские заметки пустыми значениями и не удаляя фотографии при обычном обновлении каталога.
+The versioned source CSV files in the project root remain unchanged. Catalog and visual-reference imports should update their fields separately by `id`, preserve user notes when incoming values are blank, and leave photos in place during routine catalog updates.

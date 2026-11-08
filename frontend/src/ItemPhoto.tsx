@@ -47,7 +47,7 @@ export default function ItemPhoto({ id, alt = id, className = '' }: Props) {
   return (
     <div className={`item-photo ${className}`} ref={host}>
       {src && !failed ? <img src={src} alt={alt} loading="lazy" /> : (
-        <div className="photo-placeholder"><ImageOff size={21} /><span>{failed ? 'Фото отсутствует' : 'Загрузка фото'}</span></div>
+        <div className="photo-placeholder"><ImageOff size={21} /><span>{failed ? 'Photo unavailable' : 'Loading photo'}</span></div>
       )}
     </div>
   )
