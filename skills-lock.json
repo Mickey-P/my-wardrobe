@@ -29,13 +29,6 @@
       "skillPath": "skills/.curated/security-best-practices/SKILL.md",
       "computedHash": "f3a018deca655724357a5576d36026b78f174a97094d42d3ef5f7ff08c9c1f27"
     },
-    "web-artifacts-builder": {
-      "source": "anthropics/skills",
-      "commit": "e4bb5d960d87126ff3b3a8af1a104b7db67560ba",
-      "sourceType": "github",
-      "skillPath": "skills/web-artifacts-builder/SKILL.md",
-      "computedHash": "7a081b86fd5068d3ca2c4d9c059956634feff65ccbf1c39c3d34a6e5d0971139"
-    },
     "writing-plans": {
       "source": "obra/superpowers",
       "commit": "22f0b463e7a5e579904dd6211a520321035526f7",
