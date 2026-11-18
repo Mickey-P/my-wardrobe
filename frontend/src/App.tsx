@@ -5,7 +5,7 @@ import {
   Pencil, Shirt, SlidersHorizontal, Sparkles, X,
 } from 'lucide-react'
 import ItemPhoto from './ItemPhoto'
-import { api, getToken, TOKEN_KEY } from './api'
+import { API_BASE, ACCESS_AUTH, api, getToken, TOKEN_KEY } from './api'
 
 type Visual = { visual_description?: string; critical_details?: string; uncertainties?: string }
 type WardrobeItem = {
@@ -178,8 +178,7 @@ export default function App() {
     try {
       const headers = new Headers()
       if (token) headers.set('Authorization', `Bearer ${token}`)
-      const base = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
-      const response = await fetch(`${base}/api/v1/exports/${format}`, { headers })
+      const response = await fetch(`${API_BASE}/api/v1/exports/${format}`, { headers })
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         throw new Error(typeof body?.detail === 'string' ? body.detail : `Export failed (${response.status})`)
@@ -201,8 +200,7 @@ export default function App() {
       form.append('file', file)
       const headers = new Headers()
       if (token) headers.set('Authorization', `Bearer ${token}`)
-      const base = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
-      return fetch(`${base}/api/v1/imports/zip?overwrite_conflicts=${overwrite}`, { method: 'POST', headers, body: form })
+      return fetch(`${API_BASE}/api/v1/imports/zip?overwrite_conflicts=${overwrite}`, { method: 'POST', headers, body: form })
     }
     try {
       let response = await submit(false)
@@ -238,7 +236,7 @@ export default function App() {
         </nav>
         <div className="sidebar-bottom">
           <div className="privacy-card"><LockKeyhole size={16} /><span>Personal data<br /><b>stored separately</b></span></div>
-          <button className="settings-button" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><SlidersHorizontal size={17} />Access settings</button>
+          {!ACCESS_AUTH && <button className="settings-button" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><SlidersHorizontal size={17} />Access settings</button>}
           <div className="connection"><span className={`connection-dot ${error ? 'offline' : ''}`} />{error ? 'API connection unavailable' : 'Local connection'}</div>
         </div>
       </aside>
@@ -246,7 +244,7 @@ export default function App() {
       <main className="main-area">
         <header className="topbar">
           <div><div className="breadcrumbs">MY WARDROBE <span>/</span> {title.toLocaleUpperCase()}</div><h1>{title}</h1></div>
-          <div className="top-actions"><div className="top-status"><span className={`connection-dot ${error ? 'offline' : ''}`} />{error ? 'API unavailable' : 'Synced locally'}</div><div className="export-actions"><details className="export-dropdown"><summary className="subtle-button"><Download size={15} />Export<ChevronDown size={14} /></summary><div className="export-options"><button onClick={() => void exportData('zip')}>Full ZIP archive</button><button onClick={() => void exportData('catalog.csv')}>Catalog CSV</button><button onClick={() => void exportData('catalog.json')}>Catalog JSON</button></div></details><button className="subtle-button import-button" onClick={() => importInput.current?.click()}><Upload size={15} />Import ZIP</button><input ref={importInput} type="file" accept=".zip,application/zip" hidden onChange={(event) => void importArchive(event.target.files?.[0])} /></div><button className="icon-button" title="Configure connection" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><LockKeyhole size={18} /></button></div>
+          <div className="top-actions"><div className="top-status"><span className={`connection-dot ${error ? 'offline' : ''}`} />{error ? 'API unavailable' : ACCESS_AUTH ? 'Access protected' : 'Synced locally'}</div><div className="export-actions"><details className="export-dropdown"><summary className="subtle-button"><Download size={15} />Export<ChevronDown size={14} /></summary><div className="export-options"><button onClick={() => void exportData('zip')}>Full ZIP archive</button><button onClick={() => void exportData('catalog.csv')}>Catalog CSV</button><button onClick={() => void exportData('catalog.json')}>Catalog JSON</button></div></details><button className="subtle-button import-button" onClick={() => importInput.current?.click()}><Upload size={15} />Import ZIP</button><input ref={importInput} type="file" accept=".zip,application/zip" hidden onChange={(event) => void importArchive(event.target.files?.[0])} /></div>{!ACCESS_AUTH && <button className="icon-button" title="Configure connection" onClick={() => { setTokenDraft(token); setShowSettings(true) }}><LockKeyhole size={18} /></button>}</div>
         </header>
 
         {error && <div className="alert"><CircleHelp size={17} /><span>{error}. Check that the backend is running and verify the access token in settings.</span><button onClick={() => void loadData()}>Retry</button></div>}
@@ -278,7 +276,7 @@ export default function App() {
       {selected && <ItemDetail item={items.find((item) => item.id === selected.id) || selected} close={() => setSelected(null)} tokenVersion={tokenVersion} onSave={saveItem} />}
       {composer && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setComposer(false) }}><section className="composer-modal"><header><div><div className="eyebrow">OUTFIT BUILDER</div><h2>{editingOutfit ? 'Edit outfit' : 'New outfit'}</h2></div><button className="icon-button" onClick={() => setComposer(false)}><X size={19} /></button></header><div className="composer-form"><label>Name<input autoFocus value={outfitDraft.name} onChange={(event) => setOutfitDraft({ ...outfitDraft, name: event.target.value })} placeholder="For example, a cool-weather walk" /></label><div className="form-row"><label>Season<input value={outfitDraft.season} onChange={(event) => setOutfitDraft({ ...outfitDraft, season: event.target.value })} placeholder="Spring" /></label><label>Occasion<input value={outfitDraft.occasion} onChange={(event) => setOutfitDraft({ ...outfitDraft, occasion: event.target.value })} placeholder="Casual" /></label></div><label>Description<textarea rows={2} value={outfitDraft.description} onChange={(event) => setOutfitDraft({ ...outfitDraft, description: event.target.value })} placeholder="Notes about this outfit" /></label><div className="item-pick-header"><b>Select items <small>{outfitDraft.item_ids.length} selected</small></b><label className="mini-search"><Search size={14} /><input value={outfitSearch} onChange={(event) => setOutfitSearch(event.target.value)} placeholder="Find an item" /></label></div><div className="item-picker">{outfitItems.map((item) => { const checked = outfitDraft.item_ids.includes(item.id); return <button className={`pick-item ${checked ? 'chosen' : ''}`} key={item.id} onClick={() => setOutfitDraft({ ...outfitDraft, item_ids: checked ? outfitDraft.item_ids.filter((id) => id !== item.id) : [...outfitDraft.item_ids, item.id] })}><span className="pick-check">{checked && <Check size={13} />}</span><b>{item.id}</b><span>{display(item.catalog_fields.subcategory)}</span></button> })}</div></div><footer><button className="subtle-button" onClick={() => setComposer(false)}>Cancel</button><button className="primary-button" disabled={busy} onClick={() => void saveOutfit()}>{busy ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{editingOutfit ? 'Save changes' : 'Save outfit'}</button></footer></section></div>}
 
-      {showSettings && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowSettings(false) }}><section className="settings-modal"><header><div><div className="eyebrow">API CONNECTION</div><h2>Access settings</h2></div><button className="icon-button" onClick={() => setShowSettings(false)}><X size={19} /></button></header><p>Leave this field empty for a local backend. For a hosted API, enter an access token. It is stored only in this browser and is never included in the source code.</p><label>Bearer token<input type="password" autoComplete="off" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Leave empty for local mode" /></label><footer><button className="subtle-button" onClick={() => setShowSettings(false)}>Cancel</button><button className="primary-button" onClick={pickToken}><Check size={16} />Save</button></footer></section></div>}
+      {showSettings && !ACCESS_AUTH && <div className="modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setShowSettings(false) }}><section className="settings-modal"><header><div><div className="eyebrow">API CONNECTION</div><h2>Access settings</h2></div><button className="icon-button" onClick={() => setShowSettings(false)}><X size={19} /></button></header><p>Leave this field empty for a local backend. For a hosted API, enter an access token. It is stored only in this browser and is never included in the source code.</p><label>Bearer token<input type="password" autoComplete="off" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Leave empty for local mode" /></label><footer><button className="subtle-button" onClick={() => setShowSettings(false)}>Cancel</button><button className="primary-button" onClick={pickToken}><Check size={16} />Save</button></footer></section></div>}
     </div>
   )
 }

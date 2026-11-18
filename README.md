@@ -4,9 +4,8 @@ A local-first personal wardrobe catalog. The project keeps application code sepa
 
 ## Project status
 
-- Stage 1: original-photo downloader, image manifest, and 139 local images.
-- Stages 2–4: SQLite storage, catalog imports, REST API, visual catalog interface, manual outfit builder, photo manager, ZIP/CSV/JSON exports, and ZIP import.
-- Public frontend/API hosting and moving photos/database to the cloud are not configured yet.
+- Local application features and original-photo downloader are implemented; see the [feature roadmap](docs/plan/README.md) for acceptance status, gaps, and next steps.
+- A Cloudflare Worker/D1/R2 adapter and deployment guide are present. Cloud deployment and Access protection have not yet been verified; do not import personal data until the security gate is confirmed.
 
 ## Run the backend locally
 
@@ -54,3 +53,7 @@ On subsequent runs, valid existing files are checked and skipped. Use `--force` 
 $env:PYTHONPATH = "backend"
 py -m unittest discover -s backend/tests -v
 ```
+
+## Cloudflare deployment
+
+Cloudflare support uses a separate Python Worker adapter with D1 and a private R2 bucket. The local FastAPI/SQLite mode remains available. See [the Cloudflare deployment guide](docs/cloudflare_deployment.md) for setup, Access protection, database migration, deployment, and private ZIP import.

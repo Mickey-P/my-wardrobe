@@ -1,7 +1,11 @@
-export const API_BASE = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000').replace(/\/$/, '')
 export const TOKEN_KEY = 'my-wardrobe-api-token'
+export const ACCESS_AUTH = import.meta.env.VITE_API_AUTH_MODE === 'access' ||
+  (import.meta.env.PROD && import.meta.env.VITE_API_AUTH_MODE !== 'bearer')
+const configuredApiBase = import.meta.env.VITE_API_BASE_URL
+export const API_BASE = (configuredApiBase ?? (import.meta.env.PROD ? '' : 'http://127.0.0.1:8000')).replace(/\/$/, '')
 
 export function getToken() {
+  if (ACCESS_AUTH) return ''
   return localStorage.getItem(TOKEN_KEY) || ''
 }
 
