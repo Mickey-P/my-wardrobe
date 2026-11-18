@@ -89,4 +89,5 @@ Keep changes to shared API/schema contracts coordinated in F03/F08 plans and rec
 
 ## Change log
 
+- 2026-11-18: merged PR #2, adding fixture-only release round-trip and hosted-import fallback tests in commit `d5f7a64`.
 - 2026-11-18: created feature plan based on current repository structure and documented Cloudflare readiness gaps.

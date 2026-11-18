@@ -17,7 +17,7 @@
 - [ ] Required backend suite and frontend typecheck/build run on the current checkout and pass with recorded commands/results.
 - [ ] Tests use fixtures/mock HTTP and do not depend on live CloudFront, production Cloudflare, or personal data.
 - [ ] The final fixture-only full local scenario passes: import fixture source data → inspect fixture items/photos → save an outfit → export a ZIP → import it into a clean fixture DB → verify IDs, links, photos, outfit associations, and export/report outcomes.
-- [ ] Add two future test deliverables in `backend/tests/test_release_scenario.py`: `test_fixture_release_round_trip` and `test_hosted_import_failure_keeps_local_fallback`. Both must use synthetic fixtures and temporary storage, explicit test-only path injection, and no reads of `data/`; do not run `start.ps1`, which requires private CSVs.
+- [x] Add two test deliverables in `backend/tests/test_release_scenario.py`: `test_fixture_release_round_trip` and `test_hosted_import_failure_keeps_local_fallback`. Both use synthetic fixtures and temporary storage, explicit test-only path injection, and no reads of `data/`; they do not run `start.ps1`, which requires private CSVs.
 
   `test_fixture_release_round_trip` must verify fixture import, item/photo reads, outfit persistence, archive export and import to an empty DB, record/link/photo-byte integrity, and no partial mutation on rejected import.
 
@@ -58,7 +58,7 @@ Release acceptance is the current-checkout gate, not a claim inherited from earl
 
 #### Fixture-only rollback evidence procedure
 
-The executable rollback procedure is the future `test_hosted_import_failure_keeps_local_fallback` test, not a manual app/server procedure. It must create disposable temporary storage and use test-only path injection. No manual uvicorn invocation is required.
+The executable rollback procedure is `test_hosted_import_failure_keeps_local_fallback`, not a manual app/server procedure. It creates disposable temporary storage and uses test-only path injection. No manual uvicorn invocation is required.
 
 The procedure is:
 
@@ -79,21 +79,20 @@ F11 release acceptance alone does not approve personal-data import. Import also 
 - Local README, start/stop scripts, backend tests, frontend package scripts, and Cloudflare guide exist.
 - README contains cloud status text that does not yet reflect the new Cloudflare adapter; reconcile it.
 - Cloudflare test suite has not been recorded as passing. Frontend and prior local test runs were previously reported, but rerun before release against this checkout.
-- The future `backend/tests/test_release_scenario.py::test_fixture_release_round_trip` and `backend/tests/test_release_scenario.py::test_hosted_import_failure_keeps_local_fallback` deliverables remain isolated from private startup and personal data. They must use synthetic fixtures, temporary storage, and test-only path injection; avoid reads of `data/`; and never call `start.ps1`. The fallback test must snapshot source fixture files and the local DB, simulate hosted import failure, instantiate a fresh local app instance from temporary paths, and verify fixture records and photo checksums unchanged. No manual uvicorn procedure is required.
-- Exact procedure: set `$env:PYTHONPATH = "backend"` and run `py -m unittest discover -s backend/tests -p "test_release_scenario.py" -v`. The exact result for these tests has not been run or recorded, so both remain marked future/unverified and no pass is claimed.
-- Fixture-only rollback evidence has not been run or recorded. The procedure above is the reproducible evidence requirement, not a claim that rollback has passed. Exact rollback target, backup location, quarantine action, fresh-instance method, record comparison, and photo SHA-256 results must be added only from a completed run.
+- PR #2 merged these tests through commit `51636f5`. The implementation commit is `d5f7a64`.
+- `backend/tests/test_release_scenario.py::test_fixture_release_round_trip` and `backend/tests/test_release_scenario.py::test_hosted_import_failure_keeps_local_fallback` use synthetic fixtures, temporary storage, explicit test-only path injection, no `data/` reads, and no `start.ps1` calls.
+- Release scenario command: `$env:PYTHONPATH = "backend"; py -m unittest discover -s backend/tests -p "test_release_scenario.py" -v`. Observed result on commit `d5f7a64`: 2 tests passed.
+- Backend suite command: `$env:PYTHONPATH = "backend"; py -m unittest discover -s backend/tests -v`. Observed result on commit `d5f7a64`: 17 tests passed.
+- Frontend command: `pnpm --dir frontend build`. Observed result on commit `d5f7a64`: build and typecheck passed.
+- The suite emitted a SQLAlchemy `ResourceWarning` from temporary SQLite connections during the fallback test; the test passed. This warning remains a minor cleanup item.
+- F11 final release acceptance remains unverified until rerun on the exact release candidate commit and all remaining release evidence is recorded.
 
 ## Blockers / risks
 
-- The current checkout has uncommitted Cloudflare changes; no release commit or deployment was completed in the last work session.
-- Avoid publishing a success claim based only on code compilation.
-- The fixture release scenario and fixture-only local-fallback evidence are not yet evidenced.
-- Neither future release test is yet marked passing or unverified by an observed run.
+- Personal-data migration remains blocked by the F09, F08, F07, private-R2, backup, and rollback gates.
+- Avoid publishing a release success claim until final current-checkout acceptance is complete.
+- The Cloudflare Worker and real hosted resources remain unverified.
 
 ## Next action
 
-Establish and rerun a green local baseline, fix known test/documentation issues, then execute the full local fixture-only acceptance scenario for the current checkout before the release record is accepted. Keep intermediate checks separate from final release acceptance and do not record unrun commands or outcomes as passed.
-
-Implement the approved future tests `backend/tests/test_release_scenario.py::test_fixture_release_round_trip` and `backend/tests/test_release_scenario.py::test_hosted_import_failure_keeps_local_fallback` only with synthetic fixtures and temporary storage, test-only path injection, and no reads of `data/` or `start.ps1` calls. Then run the exact future-scenario unittest command recorded above and record only observed results.
-
-Before any personal-data migration, execute the fixture-only rollback procedure through `test_hosted_import_failure_keeps_local_fallback`: snapshot the synthetic source fixture files and local DB, simulate hosted-import failure, quarantine the test cloud target, instantiate a fresh local app instance from temporary paths, and compare fixture records and photo SHA-256 checksums. Record the exact procedure and observed results; do not claim rollback passed until evidence exists. Until implementation and execution are complete, keep both tests and F11 release status future/unverified.
+On the exact release-candidate commit, rerun the backend suite, frontend build, and fixture release scenario. Record the commit, commands, exit statuses, known limitations, and final rollback evidence. Do not treat intermediate PR checks or merge success as final release acceptance.
