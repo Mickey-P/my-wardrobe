@@ -38,17 +38,34 @@ Cloudflare support has a separate Worker adapter, D1 migration, R2 binding confi
 | F10 | Future ChatGPT/MCP integration | Planned | [F10](features/F10-assistant-api.md) |
 | F11 | Quality, setup, and release | In progress | [F11](features/F11-release.md) |
 
-## Suggested delivery order
+## Delivery dependencies and phases
 
-1. F01–F03: establish trusted source data and a verified local API baseline.
-2. F02 and F05: ensure original photos, manifest status, and manual recovery paths are dependable.
-3. F04 and F06: verify the core browse, inspect, and outfit workflows.
-4. F07: prove a complete export/import round trip before any cloud migration.
-5. F09 and F08: close the security gate, then deploy and verify Cloudflare with test data first.
-6. F11: verify a clean setup and document the supported release path.
-7. F10: design the adapter only after the REST contract is stable and access is explicit.
+Feature dependencies form one directional delivery sequence. These are implementation and verification phases, not a requirement to finish every local UI feature before beginning independent Cloudflare adapter work.
 
-Dependencies are directional rather than a requirement to finish every local UI feature before cloud work. Never migrate the personal catalog until export integrity, access protection, and rollback are verified.
+1. **Local data and API baseline (F01–F03):** establish trusted source data, the local SQLite/API baseline, and stable local API contracts. Local fixture-based checks begin here.
+2. **Photos and UI/outfit flows (F02, F04–F06):** verify original photos and recovery paths, browsing and item details, photo management, and manual outfit workflows. F02 and F05 remain dependencies of the photo/management portion of this phase.
+3. **Portability (F07):** demonstrate fixture-based export and archive-import integrity, including a documented and tested first-migration rollback path, before any personal-data migration.
+4. **Security gate (F09):** verify the applicable privacy and security controls before hosted production exposure or real-data import.
+5. **Cloudflare test deployment (F08):** run the local Worker tests and local end-to-end fixture checks before any hosted work. If Access configuration requires an existing hosted Worker, a minimal empty/test-only bootstrap may be deployed only to establish and immediately protect the Worker with Access. Verify Access protection immediately, then continue with hosted fixture verification using test-only data. A successful hosted fixture run does not approve production exposure or personal-data import; F09 must pass before any production exposure.
+6. **Release verification (F11):** use F11 for continuous baseline and regression checks during feature work and as the final release gate after the implementation and fixture-based acceptance evidence are complete.
+
+F10 is deferred until the local REST/API and Cloudflare/Worker contracts are both verified and access requirements are explicit. F11 is the final release gate: F10 may not substitute for or accelerate F11 acceptance.
+
+### Cloudflare exposure, test work, and personal-data import
+
+Cloudflare work has three distinct decisions:
+
+- **Local/test work:** local Worker bindings and fixture/test data may be used to verify the separate Cloudflare adapter, independent of local SQLite/API work. Local Worker tests and local end-to-end fixture checks precede hosted work. If Access requires an existing Worker, only an empty/test-only bootstrap is permitted for initial configuration, and Access must be protected and verified immediately afterward. Hosted fixture verification follows, using test-only data.
+- **Hosted production exposure:** exposing the Worker or R2-backed interface to a production host requires the F09 security gate to pass first. This is an exposure decision, not approval to import personal data.
+- **Personal-data import:** importing the personal catalog or photos is a separate go/no-go decision. In addition to the F09 security gate and any applicable production-exposure requirements, it requires verified Cloudflare Access, private R2 storage, passing local and hosted fixture checks, tested F07 fixture export/import integrity, a verified local export backup, and a passing fixture-only local-app fallback test demonstrating unchanged source files and local DB plus preserved photo checksums. It must not proceed before all of these gates pass.
+
+The local-first workflow and local-mode support remain unchanged. Cloudflare test success, private/production exposure, and personal-data migration are not interchangeable milestones.
+
+### First-migration rollback policy
+
+Before personal-data import, preserve the original local catalog CSV, visual descriptions CSV, photos, photo manifest, and local SQLite database unchanged and available to the local file-based app. These preserved sources are the rollback source for the initial migration. Verify a local export backup, including the catalog, visual descriptions, manifest, and available photos, before import.
+
+If the hosted import fails, stop hosted use, quarantine the cloud target, and continue with the unchanged local file-based app. Quarantine means keep the remote D1/R2 target protected and out of use, record it, and leave its contents untouched for investigation; do not delete, truncate, overwrite, or attempt an in-place D1/R2 restore or other unverified restore. The initial rollback is a return to the preserved local sources and SQLite data, not a cloud-side recovery operation.
 
 ## How to continue a feature in a separate chat
 
