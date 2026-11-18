@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import io
 import json
 import os
@@ -200,16 +201,46 @@ class BackendTests(unittest.TestCase):
         source_engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
         Base.metadata.create_all(source_engine)
         SourceSession = sessionmaker(bind=source_engine, autoflush=False, expire_on_commit=False)
-        with SourceSession() as source_db:
-            item = WardrobeItem(id="W001", catalog_fields={"id": "W001", "category": "top", "image_url": "https://example.test/W001.webp"}, user_notes="Personal note")
-            item.visual_description = VisualDescription(
-                item_id="W001", source_fields={"visual_description": "White tee", "critical_details": "V neck", "uncertainties": "Fit"})
-            source_db.add(item)
-            source_db.flush()
-            source_db.add(Outfit(
-                id=1, name="Casual", description="Daily", season="spring", occasion="walk", item_ids=["W001"]))
-            source_db.commit()
-            archive_bytes, filename = export_service.make_zip(source_db)
+        with tempfile.TemporaryDirectory(dir=ROOT) as temp:
+            temp_root = Path(temp)
+            source_root = temp_root / "source"
+            source_image_root = source_root / "data" / "images"
+            source_manifest = source_root / "data" / "image_manifest.json"
+            source_image_root.mkdir(parents=True)
+            image = io.BytesIO()
+            Image.new("RGB", (4, 4), "red").save(image, format="PNG")
+            photo_bytes = image.getvalue()
+            (source_image_root / "W001.png").write_bytes(photo_bytes)
+            source_manifest.parent.mkdir(parents=True, exist_ok=True)
+            source_manifest.write_text(json.dumps({"items": [{
+                "id": "W001",
+                "source_url": "https://example.test/W001.webp",
+                "local_path": "data/images/W001.png",
+                "status": "downloaded",
+                "source_type": "catalog_original",
+                "mime_type": "image/png",
+                "size_bytes": len(photo_bytes),
+                "sha256": hashlib.sha256(photo_bytes).hexdigest(),
+            }]}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+            old_service_root = photo_service.ROOT
+            old_service_image_root, old_service_manifest = photo_service.IMAGE_ROOT, photo_service.MANIFEST
+            photo_service.ROOT = source_root
+            photo_service.IMAGE_ROOT, photo_service.MANIFEST = source_image_root, source_manifest
+            try:
+                with SourceSession() as source_db:
+                    item = WardrobeItem(id="W001", catalog_fields={"id": "W001", "category": "top", "image_url": "https://example.test/W001.webp"}, user_notes="Personal note")
+                    item.visual_description = VisualDescription(
+                        item_id="W001", source_fields={"visual_description": "White tee", "critical_details": "V neck", "uncertainties": "Fit"})
+                    source_db.add(item)
+                    source_db.flush()
+                    source_db.add(Outfit(
+                        id=1, name="Casual", description="Daily", season="spring", occasion="walk", item_ids=["W001"]))
+                    source_db.commit()
+                    archive_bytes, filename = export_service.make_zip(source_db)
+            finally:
+                photo_service.ROOT = old_service_root
+                photo_service.IMAGE_ROOT, photo_service.MANIFEST = old_service_image_root, old_service_manifest
         self.assertTrue(filename.endswith(".zip"))
 
         with tempfile.TemporaryDirectory(dir=ROOT) as temp:
